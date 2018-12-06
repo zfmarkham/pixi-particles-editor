@@ -73,6 +73,9 @@
 			"imageConfirm",
 			"addImage",
 			"stageColor",
+			"bgUpload",
+			"bgDialog",
+			"bgConfirm",
 			"content",
 			"renderer"
 		];
@@ -175,6 +178,16 @@
 				self.imageUpload.wrap('<form>').parent('form').trigger('reset');
 				self.imageUpload.unwrap();
 			});
+
+        this.bgDialog.on("show.bs.modal", function()
+        {
+            //reset the dialog before displaying it
+            self.defaultImageSelector
+                .find("option:contains('-Default Images-')")
+                .prop("selected",true);
+            self.bgUpload.wrap('<form>').parent('form').trigger('reset');
+            self.bgUpload.unwrap();
+        });
 
 		//enable the renderer toggle
 		this.renderer.find('input').on("change", function()

@@ -87,21 +87,22 @@
 			document.getElementById("canvas2dRenderer").checked = true;
 		}
 
-		// Default is stage
-		this.setRenderer(this.webgl ? "webgl" : "canvas2d");
+        backgroundSprite.scale = {x: 1, y: 1};
+        backgroundSprite.width = this.canvas2d.width;
+        backgroundSprite.height = this.canvas2d.height;
 
-		backgroundSprite.scale.x = 0.1 * this.canvas2d.width;
-		backgroundSprite.scale.y = 0.1 * this.canvas2d.height;
+        // Default is stage
+        this.setRenderer(this.webgl ? "webgl" : "canvas2d");
 
-		this.on("resize", this.onResize);
-		this.triggerResize();
-	}
+        this.on("resize", this.onResize);
+        this.triggerResize();
+    }
 
-	p.onResize = function(w, h)
-	{
-		backgroundSprite.scale.x = 0.1 * w;
-		backgroundSprite.scale.y = 0.1 * h;
-	};
+    p.onResize = function (w, h) {
+        backgroundSprite.scale = {x: 1, y: 1};
+        backgroundSprite.width = w;
+        backgroundSprite.height = h;
+    };
 
 	/**
 	*  Handler on the configuration load
@@ -116,6 +117,7 @@
 		this.ui.refresh.click(this.loadFromUI);
 		this.ui.configConfirm.on("click", this.loadConfig.bind(this));
 		this.ui.imageConfirm.on("click", this.loadImage.bind(this));
+        this.ui.bgConfirm.on("click", this.loadImage.bind(this, 'background'));
 
 		// Set the starting stage color
 		this.ui.stageColor.minicolors("value", SavedData.read('stageColor') || '999999');
@@ -438,44 +440,65 @@
 	{
 		var ui = this.ui, type, value, success = false;
 
-		if(ui.defaultImageSelector.val() != "-Default Images-")
-			type = "select";
-		else if(ui.imageUpload[0].files.length > 0)
-			type = "upload";
+        if (ui.defaultImageSelector.val() !== "-Default Images-")
+            type = "select";
+        else if (ui.imageUpload[0].files.length > 0)
+            type = "upload";
+        else if (ui.bgUpload[0].files.length > 0)
+            type = "bgUpload";
 
-		if (type == "select")
-		{
-			value = ui.defaultImageSelector.val();
-			if(value != "-Default Images-")
-			{
-				success = true;
-				this.addImage(value);
-				this.loadFromUI();
-			}
-		}
-		else if (type == "upload")
-		{
-			var onloadend = function(readerObj)
-			{
-				this.addImage(readerObj.result);
-				this.loadFromUI();
-			};
+        var files, reader, file, onloadend, i;
 
-			var files = ui.imageUpload[0].files;
+        if (type === "select") {
+            value = ui.defaultImageSelector.val();
+            if (value !== "-Default Images-") {
+                success = true;
+                this.addImage(value);
+                this.loadFromUI();
+            }
+        }
+        else if (type === "upload") {
+            onloadend = function (readerObj) {
+                this.addImage(readerObj.result);
+                this.loadFromUI();
+            };
 
-			for (var i = 0; i < files.length; i++)
-			{
-				var file = files[i];
-				var reader = new FileReader();
-				reader.onloadend = onloadend.bind(this, reader);
-				reader.readAsDataURL(file);
-			}
+            files = ui.imageUpload[0].files;
 
-			success = true;
-		}
-		if(success)
-			ui.imageDialog.modal("hide");
-	};
+            for (i = 0; i < files.length; i++) {
+                file = files[i];
+                reader = new FileReader();
+                reader.onloadend = onloadend.bind(this, reader);
+                reader.readAsDataURL(file);
+            }
+
+            success = true;
+        }
+        else if (type === "bgUpload") {
+            onloadend = function (readerObj) {
+                var img = new Image();
+                img.src = readerObj.result;
+                document.body.appendChild(img);
+                backgroundSprite = new Sprite(Texture.fromImage(img));
+            };
+
+            files = ui.bgUpload[0].files;
+
+            for (i = 0; i < files.length; i++) {
+                file = files[i];
+                reader = new FileReader();
+                reader.onloadend = onloadend.bind(this, reader);
+                reader.readAsDataURL(file);
+            }
+
+            success = true;
+        }
+
+        if (success) {
+            ui.imageDialog.modal("hide");
+            ui.bgDialog.modal("hide");
+        }
+    };
 
 	/**
 	*  Add an image from a filesource
